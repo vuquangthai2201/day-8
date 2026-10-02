@@ -1,0 +1,42 @@
+services:
+  pg-primary:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: flashsale
+      POSTGRES_USER: flashsale
+      POSTGRES_PASSWORD: flashsale
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - max_wal_senders=10
+      - -c
+      - hot_standby=on
+      # --- Knob cho checkout (Production): bật sync replication, xem DESIGN.md mục 4 ---
+      # - -c
+      # - synchronous_commit=on
+      # - -c
+      # - synchronous_standby_names=ANY 1 (replica1)
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./docker/primary-init.sh:/docker-entrypoint-initdb.d/primary-init.sh
+
+  redis:
+    image: redis:7
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec", "--maxmemory-policy", "noeviction"]
+    ports:
+      - "6379:6379"
+
+  # Tùy chọn: docker compose --profile replica up -d
+  pg-replica:
+    profiles: ["replica"]
+    image: postgres:16
+    depends_on:
+      - pg-primary
+    entrypoint: ["/bin/bash", "/replica-entrypoint.sh"]
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./docker/replica-entrypoint.sh:/replica-entrypoint.sh

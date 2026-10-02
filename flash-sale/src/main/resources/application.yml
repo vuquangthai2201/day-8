@@ -1,0 +1,46 @@
+spring:
+  threads:
+    virtual:
+      enabled: true            # 50k kết nối đồng thời: thread ảo thay cho pool thread cố định
+  datasource:
+    url: jdbc:postgresql://localhost:5432/flashsale
+    username: flashsale
+    password: flashsale
+    hikari:
+      maximum-pool-size: 30    # DB chỉ thấy tải ghi ~ số hàng tồn kho, không phải số user
+      minimum-idle: 10
+      connection-timeout: 250  # fail fast, giữ trong SLO
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 50ms            # lệnh Redis quá 50ms coi như lỗi
+      connect-timeout: 100ms
+  sql:
+    init:
+      mode: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+
+app:
+  hold:
+    ttl-seconds: 120              # giữ hàng sau add-to-cart
+    checkout-window-seconds: 300  # gia hạn khi bắt đầu checkout
+    max-qty-per-user: 2
+  listing:
+    cache-ms: 500                 # cache cục bộ + single-flight; trần lệch 2s => 500ms + lag replica
+  payment:
+    sync: false                   # false: trả 202 ngay, thanh toán chạy nền (giữ P95 write < 120ms)
+    latency-ms: 150               # giả lập độ trễ cổng thanh toán
+    failure-rate: 0.0
+  reconcile:
+    interval-ms: 10000
+    stale-after-seconds: 30
+  replica:
+    url: ${APP_REPLICA_URL:}      # rỗng = đọc từ primary. Ví dụ: jdbc:postgresql://localhost:5433/flashsale
+    username: flashsale
+    password: flashsale
