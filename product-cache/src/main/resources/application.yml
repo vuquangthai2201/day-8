@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: product-cache-demo
+  datasource:
+    url: jdbc:postgresql://localhost:5432/productdb
+    username: product
+    password: product
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  data:
+    redis:
+      host: localhost
+      port: 6381
+
+app:
+  cache:
+    l1:                     # Caffeine (trong JVM của từng instance)
+      ttl-seconds: 60
+      max-size: 1000
+    l2:                     # Redis (dùng chung giữa các instance)
+      ttl-minutes: 10
+
+logging:
+  level:
+    com.example.productcache: INFO

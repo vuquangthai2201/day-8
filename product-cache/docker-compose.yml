@@ -1,0 +1,21 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: product-redis
+    ports:
+      - "6381:6379"        # host 6381 -> container 6379 (tránh đụng cổng 6379/6380 của bài Leaderboard)
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: product-postgres
+    environment:
+      POSTGRES_DB: productdb
+      POSTGRES_USER: product
+      POSTGRES_PASSWORD: product
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
