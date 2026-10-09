@@ -1,0 +1,23 @@
+### Tao san pham
+POST http://localhost:8080/inventories
+Content-Type: application/json
+
+{"productId": 2, "productName": "iPhone 15", "quantity": 20}
+
+### Xem thong tin (lay version)
+GET http://localhost:8080/inventories/1
+
+### Nhap hang (Pessimistic Lock)
+POST http://localhost:8080/inventories/1/stock-in
+Content-Type: application/json
+
+{"quantity": 5}
+
+### Sua thong tin (Optimistic Lock) - gui lai lan 2 voi version cu => 409
+PUT http://localhost:8080/inventories/1
+Content-Type: application/json
+
+{"productName": "Laptop Dell XPS 15", "version": 0}
+
+### Lich su thay doi (Envers)
+GET http://localhost:8080/inventories/1/history
