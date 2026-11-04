@@ -1,0 +1,85 @@
+classDiagram
+    class User {
+        -Long id
+        -String username
+        -String email
+        +getId() Long
+        +getUsername() String
+    }
+
+    class Product {
+        -Long id
+        -String name
+        -BigDecimal price
+        -Integer stockQuantity
+        +getId() Long
+        +getPrice() BigDecimal
+        +getStockQuantity() Integer
+        +isAvailable(Integer quantity) Boolean
+    }
+
+    class CartItem {
+        -Long id
+        -Product product
+        -Integer quantity
+        -BigDecimal unitPrice
+        +getQuantity() Integer
+        +setQuantity(Integer quantity) void
+        +increaseQuantity(Integer quantity) void
+        +getSubtotal() BigDecimal
+    }
+
+    class Cart {
+        -Long id
+        -User user
+        -List~CartItem~ items
+        -LocalDateTime updatedAt
+        +addItem(Product product, Integer quantity) void
+        +findItemByProduct(Long productId) Optional~CartItem~
+        +getTotalAmount() BigDecimal
+    }
+
+    class AddToCartRequest {
+        -Long productId
+        -Integer quantity
+        +getProductId() Long
+        +getQuantity() Integer
+    }
+
+    class CartResponse {
+        -Long cartId
+        -List~CartItemDto~ items
+        -BigDecimal totalAmount
+        -String message
+    }
+
+    class CartController {
+        -CartService cartService
+        +addToCart(Long userId, AddToCartRequest request) ResponseEntity~CartResponse~
+    }
+
+    class CartService {
+        -CartRepository cartRepository
+        -ProductRepository productRepository
+        +addToCart(Long userId, Long productId, Integer quantity) CartResponse
+    }
+
+    class ProductRepository {
+        <<interface>>
+        +findById(Long id) Optional~Product~
+    }
+
+    class CartRepository {
+        <<interface>>
+        +findByUserId(Long userId) Optional~Cart~
+        +save(Cart cart) Cart
+    }
+
+    User "1" -- "1" Cart : owns
+    Cart "1" *-- "0..*" CartItem : contains
+    CartItem "1" --> "1" Product : references
+    CartController --> CartService : uses
+    CartService --> ProductRepository : uses
+    CartService --> CartRepository : uses
+    CartController ..> AddToCartRequest : accepts
+    CartController ..> CartResponse : returns

@@ -1,0 +1,69 @@
+sequenceDiagram
+    autonumber
+    actor User as Người dùng (Client)
+    participant Controller as CartController
+    participant Service as CartService
+    participant ProductRepo as ProductRepository
+    participant CartRepo as CartRepository
+    participant CartEntity as Cart
+    participant ItemEntity as CartItem
+
+    User->>Controller: POST /api/cart/items (userId, productId, quantity)
+    activate Controller
+    Controller->>Service: addToCart(userId, productId, quantity)
+    activate Service
+
+    %% Bước 1: Kiểm tra sản phẩm
+    Service->>ProductRepo: findById(productId)
+    activate ProductRepo
+    ProductRepo-->>Service: Optional<Product>
+    deactivate ProductRepo
+
+    alt Sản phẩm không tồn tại
+        Service-->>Controller: throw ProductNotFoundException("Sản phẩm không tồn tại")
+        Controller-->>User: 404 Not Found (Error response)
+    else Sản phẩm tồn tại
+        %% Bước 2: Lấy hoặc tạo mới Giỏ hàng
+        Service->>CartRepo: findByUserId(userId)
+        activate CartRepo
+        CartRepo-->>Service: Optional<Cart>
+        deactivate CartRepo
+
+        alt Giỏ hàng chưa tồn tại
+            Service->>CartEntity: new Cart(user)
+            activate CartEntity
+            CartEntity-->>Service: cartInstance
+            deactivate CartEntity
+        end
+
+        %% Bước 3: Thêm sản phẩm vào giỏ
+        Service->>CartEntity: addItem(product, quantity)
+        activate CartEntity
+        CartEntity->>CartEntity: findItemByProduct(productId)
+        
+        alt Sản phẩm đã có trong giỏ
+            CartEntity->>ItemEntity: increaseQuantity(quantity)
+            activate ItemEntity
+            ItemEntity-->>CartEntity: updated
+            deactivate ItemEntity
+        else Sản phẩm chưa có trong giỏ
+            CartEntity->>ItemEntity: new CartItem(product, quantity)
+            activate ItemEntity
+            ItemEntity-->>CartEntity: newItem
+            deactivate ItemEntity
+            CartEntity->>CartEntity: items.add(newItem)
+        end
+        CartEntity-->>Service: updated Cart
+        deactivate CartEntity
+
+        %% Bước 4: Lưu thông tin giỏ hàng
+        Service->>CartRepo: save(cart)
+        activate CartRepo
+        CartRepo-->>Service: savedCart
+        deactivate CartRepo
+
+        Service-->>Controller: CartResponse(savedCart)
+        deactivate Service
+        Controller-->>User: 200 OK (CartResponse)
+        deactivate Controller
+    end
